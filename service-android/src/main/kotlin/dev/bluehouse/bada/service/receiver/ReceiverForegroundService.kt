@@ -1285,10 +1285,14 @@ public class ReceiverForegroundService : Service() {
          */
         public fun start(context: Context) {
             val intent = Intent(context, ReceiverForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            val result =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            checkNotNull(result) {
+                "Android returned no service component for ${intent.component}; receiver start was not accepted"
             }
         }
 
