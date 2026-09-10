@@ -122,6 +122,7 @@
     <!-- General networking (compile-time). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Lets the automatic update's "Download & install" action install the
          downloaded APK via PackageInstaller (a true drop-in self-update). The
@@ -615,6 +616,14 @@
                 android:name="android.nfc.cardemulation.host_apdu_service"
                 android:resource="@xml/bada_namecard_apduservice" />
         </service>
+
+        <receiver
+            android:name=".receiver.ReceiverBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Receives PackageInstaller status for the auto-update "Download &
              install" flow (UpdateDownloadInstaller). Not exported — only the

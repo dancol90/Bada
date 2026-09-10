@@ -283,6 +283,13 @@ public class ReceiverForegroundService : Service() {
         // Bring up the receiver session if it isn't already running.
         // Multiple startService calls are otherwise idempotent.
         if (session == null) {
+            // Tile/NFC wakes own bounded visibility windows, not the startup default.
+            if (intent?.action != ACTION_TILE_WAKE &&
+                intent?.action != ACTION_NFC_WAKE &&
+                !TileVisibilityElevationHolder.isArmed
+            ) {
+                MdnsVisibilityOverrideHolder.setAlwaysVisible(ReceiverStartupPreferences(this).alwaysVisibleOnStartup)
+            }
             startBleScanner()
             startReceiverSession()
         }
@@ -1077,6 +1084,9 @@ public class ReceiverForegroundService : Service() {
         // service that is already gone or re-toggling an override the user
         // may have since changed by other means. Best-effort, idempotent.
         TileVisibilityElevationHolder.disarm()
+        // Visibility belongs to this session. The next ordinary start loads
+        // its saved default; a cold temporary wake must not inherit stale state.
+        MdnsVisibilityOverrideHolder.setAlwaysVisible(false)
         // The receiver is going away — make sure a tap can no longer read
         // a stale tag pointing at the about-to-close TCP listener. The
         // advertising-flow collector also clears this, but the scope is
@@ -1378,9 +1388,9 @@ public object ActiveBleScannerHolder {
  * unavailable (no `BLUETOOTH_SCAN` grant, no LE hardware) or whenever
  * the user wants to be discoverable regardless of sender activity.
  *
- * The flag is process-wide and lives in memory only — it resets across
- * process death. Persisting the toggle is a follow-up; the in-memory
- * surface is the minimum #34 needs to ship the override path.
+ * The live flag is process-wide and in-memory. Ordinary new receiver
+ * sessions initialize it from [ReceiverStartupPreferences]; temporary
+ * tile/NFC windows and live UI changes do not modify that preference.
  *
  * The gate subscribes to [activeFlow]; UI surfaces (and tests) flip the
  * value via [setAlwaysVisible].

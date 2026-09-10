@@ -35,6 +35,7 @@ import dev.bluehouse.bada.service.downloads.SaveLocationPreferences
 import dev.bluehouse.bada.service.receiver.AdvertisedDeviceNames
 import dev.bluehouse.bada.service.receiver.ReceiverForegroundService
 import dev.bluehouse.bada.service.receiver.ReceiverMasterSwitch
+import dev.bluehouse.bada.service.receiver.ReceiverStartupPreferences
 import dev.bluehouse.bada.transfer.KeepScreenOnPreferences
 import dev.bluehouse.bada.transfer.TransferExpertViewPreferences
 import dev.bluehouse.bada.update.UpdatePreferences
@@ -104,6 +105,7 @@ internal class SettingsFragment : Fragment(R.layout.fragment_settings) {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+        bindReceiverStartupSwitches(view)
 
         wireMasterSwitch(view)
 
@@ -190,6 +192,7 @@ internal class SettingsFragment : Fragment(R.layout.fragment_settings) {
         refreshFullScreenIntentSection()
         refreshBugReportSwitch()
         refreshTransferSwitches()
+        refreshReceiverStartupSwitches()
         refreshNameCardDot()
     }
 
@@ -305,6 +308,30 @@ internal class SettingsFragment : Fragment(R.layout.fragment_settings) {
         v
             .findViewById<SwitchCompat>(R.id.settings_auto_update_switch)
             ?.refreshChecked(UpdatePreferences.from(requireContext()).autoCheckEnabled())
+    }
+
+    private fun bindReceiverStartupSwitches(view: View) {
+        val preferences = ReceiverStartupPreferences(requireContext())
+        val bootSwitch = view.findViewById<SwitchCompat>(R.id.settings_start_on_boot_switch)
+        bootSwitch.isChecked = preferences.startOnBoot
+        bootSwitch.setOnCheckedChangeListener { _, checked ->
+            preferences.startOnBoot = checked
+        }
+        val visibleSwitch = view.findViewById<SwitchCompat>(R.id.settings_always_visible_on_startup_switch)
+        visibleSwitch.isChecked = preferences.alwaysVisibleOnStartup
+        // Only future receiver sessions consume this preference; leave the live mode alone.
+        visibleSwitch.setOnCheckedChangeListener { _, checked ->
+            preferences.alwaysVisibleOnStartup = checked
+        }
+    }
+
+    private fun refreshReceiverStartupSwitches() {
+        val v = view ?: return
+        val preferences = ReceiverStartupPreferences(requireContext())
+        v.findViewById<SwitchCompat>(R.id.settings_start_on_boot_switch).refreshChecked(preferences.startOnBoot)
+        v
+            .findViewById<SwitchCompat>(R.id.settings_always_visible_on_startup_switch)
+            .refreshChecked(preferences.alwaysVisibleOnStartup)
     }
 
     private fun SwitchCompat.refreshChecked(enabled: Boolean) {

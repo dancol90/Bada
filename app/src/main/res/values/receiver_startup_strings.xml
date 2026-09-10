@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_start_on_boot_title">Start receiving on boot</string>
+    <string name="settings_start_on_boot_subtitle">Start background receiving after restart and first unlock, with an ongoing notification. Requires receiving permissions; your phone’s autostart or battery settings may prevent startup.</string>
+    <string name="settings_always_visible_on_startup_title">Always visible on startup</string>
+    <string name="settings_always_visible_on_startup_subtitle">Be discoverable to nearby senders when receiving next starts from the app or on boot. Transfers still require acceptance. May use more battery. Tile and NFC visibility stays temporary.</string>
+</resources>
