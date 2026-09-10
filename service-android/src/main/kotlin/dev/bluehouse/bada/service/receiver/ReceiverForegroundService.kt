@@ -828,17 +828,11 @@ public class ReceiverForegroundService : Service() {
                             connectionId: Long,
                             entry: ConsentRegistry.Entry,
                         ) {
-                            ConsentNotification.post(
-                                context = ctx,
-                                connectionId = connectionId,
-                                entry = entry,
-                                trampolineTarget = consentTrampolineTarget,
-                                diagnostic = { line -> ConsentDiagnostic.log(ctx, line) },
-                            )
+                            launchConsentTrampolineAsModal(connectionId)
                         }
 
                         override fun dismissConsent(connectionId: Long) {
-                            ConsentNotification.dismiss(ctx, connectionId)
+                            ConsentModalRegistry.instance.dismiss(connectionId)
                         }
 
                         override fun launchModal(

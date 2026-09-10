@@ -247,6 +247,8 @@
          Add-contact screen (ACTION_INSERT), which needs no permission. -->
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
 
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    
     <!-- #145: probe whether a coresident pre-Bada install is still present so
          the launcher can warn the user to uninstall it. The old install
          registers a duplicate `0xFEF3` GATT advertisement service on the same
