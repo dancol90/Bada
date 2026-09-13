@@ -6,8 +6,11 @@
 package dev.bluehouse.bada.service.downloads
 
 import android.content.Context
+import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
+import android.provider.DocumentsContract
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import java.io.File
 
@@ -86,6 +89,24 @@ public object DownloadsWriterFactory {
             return SafTreeDownloadsEnvironment(
                 contentResolver = app.contentResolver,
                 treeUri = savedTreeUri,
+                onDocumentCommitted = { uri ->
+                    @Suppress("DEPRECATION")
+                    val file =
+                        InternalStorageDocumentPath.resolve(
+                            uri.authority,
+                            DocumentsContract.getDocumentId(uri),
+                            Environment.getExternalStorageDirectory(),
+                        )
+                    if (file != null) {
+                        MediaScannerConnection.scanFile(app, arrayOf(file.absolutePath), null) { _, scannedUri ->
+                            if (scannedUri == null) {
+                                Log.w("BadaMediaScan", "Received file was not indexed by media scanner")
+                            }
+                        }
+                    } else {
+                        Log.d("BadaMediaScan", "Skipping scan for unsupported document provider or storage path")
+                    }
+                },
             )
         }
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

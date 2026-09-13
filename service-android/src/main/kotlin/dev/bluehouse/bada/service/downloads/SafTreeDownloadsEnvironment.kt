@@ -8,6 +8,7 @@ package dev.bluehouse.bada.service.downloads
 import android.content.ContentResolver
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.util.Log
 import androidx.annotation.RequiresApi
 import java.io.IOException
 import java.io.OutputStream
@@ -76,6 +77,7 @@ import java.io.OutputStream
 internal class SafTreeDownloadsEnvironment(
     private val contentResolver: ContentResolver,
     private val treeUri: Uri,
+    private val onDocumentCommitted: (Uri) -> Unit,
 ) : DownloadsEnvironment {
     override fun insertPending(
         displayName: String,
@@ -130,12 +132,21 @@ internal class SafTreeDownloadsEnvironment(
         // which the user can recover manually. We do NOT throw —
         // raising here would mark the transfer failed even though
         // the bytes are safe.
-        runCatching {
-            DocumentsContract.renameDocument(
-                contentResolver,
-                safDest.documentUri,
-                safDest.displayName,
-            )
+        val finalUri =
+            runCatching {
+                DocumentsContract.renameDocument(
+                    contentResolver,
+                    safDest.documentUri,
+                    safDest.displayName,
+                )
+            }.onFailure { Log.w(TAG, "Could not finalize received document", it) }.getOrNull()
+        if (finalUri != null) {
+            // Renaming can change the document ID. Scan the returned URI,
+            // never the placeholder, and keep indexing failures non-fatal.
+            runCatching { onDocumentCommitted(finalUri) }
+                .onFailure { Log.w(TAG, "Could not request received media scan", it) }
+        } else {
+            Log.w(TAG, "No finalized document URI; skipping media scan")
         }
         // SAF has no first-class "set last modified" API; trying to
         // set it on the underlying file system descriptor is
@@ -265,6 +276,8 @@ internal class SafTreeDownloadsEnvironment(
     }
 
     private companion object {
+        const val TAG: String = "BadaMediaScan"
+
         /**
          * Suffix appended to the in-flight placeholder document.
          * Same convention as the legacy environment so users
